@@ -2,27 +2,28 @@
 # resource_dasm from
 # https://github.com/fuzziqersoftware/resource_dasm
 # set -x
-if [[ -n "${1}" ]];
+APPICON=;
+if [[ -n "${1}" ]] && [[ "$1" != "-" ]] ;
     then
         GAMEPATH="$1"
-    else
+    elif [[ "$1" == "-" ]] || [[ -z "${1}" ]] ; then
         echo Enter Game Shortcut path: 
         read GAMEPATH
 fi
 
 if [[ -n "$2" ]]; then
-echo image empty
         APPICON="$2"
 fi
 
-
-# in="$1"
+[ -z $GAMEPATH ] && echo "you cant leave the path empty. check readme \a\v" && exit 1;
 inputFile="$(cat "$GAMEPATH")"
 # if using bash then use a temporary variable
 # cmsID="${inputFile%%&*}";
 # then apply the second expansion
 # x=${cmsID#*=}
 # echo $x
+
+
 gameID="${"${inputFile%%&*}"#*=}";
 
 fileName="${GAMEPATH##*/}"
@@ -48,17 +49,21 @@ RESOURCESDIR=""${CONTENTSDIR}"/Resources"
 # icns=$(echo "69 63 6E 73$icns") # add the magic number back
 #
 # getting the icon from original shortcut (method 2)
-if [ -z "$APPICON" ];
+if [[ -z "$APPICON" ]] && [[ "$APPICON" != "-" ]];
     then
         echo "\vif you have a game icon put the location here (.icns file): "
         echo "if left empty then the icon from the shortcut will be used. \v"
         read APPICON
-        if [ -z "$APPICON" ]; then      
+        if [[ -z "$APPICON" ]] || [[ "$APPICON" == "-" ]]; then      
                 resource_dasm --target-type=icns "$GAMEPATH" $tempDIR/"${gameName}"-output 2>/dev/null 1>&2
                 cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns
             else
                 cp "$APPICON" "$RESOURCESDIR"/GameIcon.icns
-        fi        
+        fi
+        elif  [[ "$APPICON" == "-" ]];
+            then
+                resource_dasm --target-type=icns "$GAMEPATH" $tempDIR/"${gameName}"-output 2>/dev/null 1>&2
+                cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns      
     else
         cp "$APPICON" "$RESOURCESDIR"/GameIcon.icns
 fi
