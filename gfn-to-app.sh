@@ -3,6 +3,12 @@
 # https://github.com/fuzziqersoftware/resource_dasm
 # set -x
 APPICON=;
+############################
+VERBOSE=$3
+DEBUG=$4
+[[ "$DEBUG" == "d" ]] && set -x;
+[[ "$VERBOSE" == "-" ]] && VERBOSE=YES
+############################
 if [[ -n "${1}" ]] && [[ "$1" != "-" ]] ;
     then
         GAMEPATH="$1"
@@ -43,6 +49,18 @@ MACOSDIR=""${CONTENTSDIR}"/MacOS"
 mkdir "${CONTENTSDIR}"/Resources
 RESOURCESDIR=""${CONTENTSDIR}"/Resources"
 
+####################
+# Color codes
+esc="$( echo -ne "\033" )"
+escReset="${esc}[0m"
+escUnder="${esc}[4m"
+escBlue="${esc}[34m"
+escGreen="${esc}[32m"
+escRed="${esc}[31m"
+escYellow="${esc}[33m"
+escPurple="${esc}[35m"
+escCyan="${esc}[36m"
+#################
 # getting the icon from original shortcut (method 1) found here: https://stackoverflow.com/q/73354927/11709309
 # icns="$(xattr -px com.apple.ResourceFork "$GAMEPATH")" # grab the resource fork from the input file in hex format
 # icns=${icns#*69 63 6E 73}   # using variable expansion delete the first 260 bytes including the magic number for icns.
@@ -68,6 +86,7 @@ if [[ -z "$APPICON" ]] && [[ "$APPICON" != "-" ]];
         cp "$APPICON" "$RESOURCESDIR"/GameIcon.icns
 fi
 
+[ $VERBOSE ] && echo $escGreen"Creating Plist"$escReset
 # create Info.plist
 /usr/libexec/PlistBuddy -c 'Add :CFBundleDevelopmentRegion string English' "$CONTENTSDIR"/Info.plist 1>/dev/null
 /usr/libexec/PlistBuddy -c 'Add :CFBundleIconFile string GameIcon.icns' "$CONTENTSDIR"/Info.plist
@@ -79,6 +98,7 @@ fi
 /usr/libexec/PlistBuddy -c 'Add :CFBundleExecutable string GFN' "$CONTENTSDIR"/Info.plist
 /usr/libexec/PlistBuddy -c 'Add :LSUIElement bool true' "$CONTENTSDIR"/Info.plist
 
+[ $VERBOSE ] && echo $escGreen"Creating Executable File"$escReset
 # create the Executable file
 cat << ENDOFSCRIPT > "$CONTENTSDIR"/MacOS/GFN
 #!/bin/zsh
@@ -97,6 +117,8 @@ if [ -f "/Applications/"$APPBUNDLE"" ]; then
     else
         mv "$APPBUNDLE" /Applications/Games
 fi
+[ $VERBOSE ] && echo $escGreen"Setting Permissions"$escReset
 
+[ $VERBOSE ] && echo $escGreen"Moving Application"$escReset
 
 echo "Done \a"
