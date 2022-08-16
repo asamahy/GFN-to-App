@@ -2,7 +2,6 @@
 # resource_dasm from
 # https://github.com/fuzziqersoftware/resource_dasm
 # set -x
-APPICON=;
 ############################
 VERBOSE=$3
 DEBUG=$4
@@ -23,32 +22,27 @@ fi
 
 [ -z $GAMEPATH ] && echo "you cant leave the path empty. check readme \a\v" && exit 1;
 inputFile="$(cat "$GAMEPATH")"
+#
 # if using bash then use a temporary variable
 # cmsID="${inputFile%%&*}";
 # then apply the second expansion
 # x=${cmsID#*=}
 # echo $x
-
-
+#################
+# Setting Variables
+#################
+tempDIR=$(mktemp -d)
 gameID="${"${inputFile%%&*}"#*=}";
-
 fileName="${GAMEPATH##*/}"
 gameName="${fileName% on*}"
-
-tempDIR=$(mktemp -d)
-
 mkdir -p $tempDIR/"${gameName}".app
 APPBUNDLE="$tempDIR/"${gameName}".app"
-
 mkdir "${APPBUNDLE}"/Contents
 CONTENTSDIR=""${APPBUNDLE}"/Contents"
-
 mkdir "${CONTENTSDIR}"/MacOS
 MACOSDIR=""${CONTENTSDIR}"/MacOS"
-
 mkdir "${CONTENTSDIR}"/Resources
 RESOURCESDIR=""${CONTENTSDIR}"/Resources"
-
 ####################
 # Color codes
 esc="$( echo -ne "\033" )"
@@ -66,6 +60,10 @@ escCyan="${esc}[36m"
 # icns=${icns#*69 63 6E 73}   # using variable expansion delete the first 260 bytes including the magic number for icns.
 # icns=$(echo "69 63 6E 73$icns") # add the magic number back
 #
+# Game existance check
+[[ -d "/Applications/Games/"${APPBUNDLE##*/}"" ]] && {echo $escRed""${APPBUNDLE##*/}" already exists \a"$escReset && exit 1}
+#
+[ $VERBOSE ] && echo $escGreen"Extracting Game Icon"$escReset
 # getting the icon from original shortcut (method 2)
 if [[ -z "$APPICON" ]] && [[ "$APPICON" != "-" ]];
     then
@@ -105,20 +103,15 @@ cat << ENDOFSCRIPT > "$CONTENTSDIR"/MacOS/GFN
 
 open "/Applications/GeForceNOW.app" --args --url-route="#?cmsId=${gameID}&launchSource=External"
 ENDOFSCRIPT
-# echo waiting
-# read ok
-# make it executable
-chmod u+x "$CONTENTSDIR"/MacOS/GFN
 
-# move it to Application
-if [ -f "/Applications/"$APPBUNDLE"" ]; then
-        echo "File \""$APPBUNDLE"\" already exists"
-        exit 1
-    else
-        mv "$APPBUNDLE" /Applications/Games
-fi
 [ $VERBOSE ] && echo $escGreen"Setting Permissions"$escReset
+# make it executable
+chmod u+x "$CONTENTSDIR"/MacOS/GFN || { echo $escRed"Setting Permissions Failed"$escReset && rm -R "$tempDIR" }
 
 [ $VERBOSE ] && echo $escGreen"Moving Application"$escReset
+# move Game to Applications/Games
+[[ ! -d "/Applications/Games" ]] && mkdir "/Applications/Games"
+mv "$APPBUNDLE" /Applications/Games && echo $escGreen"\v[*]Done! $gameName app created successfully \a"$escReset
+# cleanup
+rm -R "$tempDIR"
 
-echo "Done \a"
