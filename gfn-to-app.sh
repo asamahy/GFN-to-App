@@ -1,7 +1,6 @@
 #!/bin/zsh
 # resource_dasm from
 # https://github.com/fuzziqersoftware/resource_dasm
-# set -x
 ############################
 VERBOSE=$3
 DEBUG=$4
@@ -43,7 +42,7 @@ mkdir "${CONTENTSDIR}"/MacOS
 MACOSDIR=""${CONTENTSDIR}"/MacOS"
 mkdir "${CONTENTSDIR}"/Resources
 RESOURCESDIR=""${CONTENTSDIR}"/Resources"
-####################
+#####################
 # Color codes
 esc="$( echo -ne "\033" )"
 escReset="${esc}[0m"
@@ -55,13 +54,21 @@ escYellow="${esc}[33m"
 escPurple="${esc}[35m"
 escCyan="${esc}[36m"
 #################
+cleanup(){
+  echo -e $escRed"\nRemoving Temp Files....\n"$escReset
+  rm -R "$tempDIR" || echo "Unable to Remove Temp Directory"
+  exit 1
+}
+#############
 # getting the icon from original shortcut (method 1) found here: https://stackoverflow.com/q/73354927/11709309
 # icns="$(xattr -px com.apple.ResourceFork "$GAMEPATH")" # grab the resource fork from the input file in hex format
 # icns=${icns#*69 63 6E 73}   # using variable expansion delete the first 260 bytes including the magic number for icns.
 # icns=$(echo "69 63 6E 73$icns") # add the magic number back
 #
+# cleanup trigger
+trap cleanup 1 2 3 6
 # Game existance check
-[[ -d "/Applications/Games/"${APPBUNDLE##*/}"" ]] && {echo $escRed""${APPBUNDLE##*/}" already exists \a"$escReset && exit 1}
+[[ -d "/Applications/Games/"${APPBUNDLE##*/}"" ]] && {echo $escRed""${APPBUNDLE##*/}" already exists \a"$escReset && cleanup }
 #
 [ $VERBOSE ] && echo $escGreen"Extracting Game Icon"$escReset
 # getting the icon from original shortcut (method 2)
@@ -103,15 +110,16 @@ cat << ENDOFSCRIPT > "$CONTENTSDIR"/MacOS/GFN
 
 open "/Applications/GeForceNOW.app" --args --url-route="#?cmsId=${gameID}&launchSource=External"
 ENDOFSCRIPT
-
+[[ ! $? ]] && { echo $escRed"Creating Executable Failed. Check Debug"$escReset && cleanup && exit 1 }
 [ $VERBOSE ] && echo $escGreen"Setting Permissions"$escReset
 # make it executable
-chmod u+x "$CONTENTSDIR"/MacOS/GFN || { echo $escRed"Setting Permissions Failed"$escReset && rm -R "$tempDIR" }
+chmod u+x "$CONTENTSDIR"/MacOS/GFN 2>/dev/null || { echo $escRed"Setting Permissions Failed. Check Debug"$escReset && cleanup && exit 1 }
 
 [ $VERBOSE ] && echo $escGreen"Moving Application"$escReset
 # move Game to Applications/Games
 [[ ! -d "/Applications/Games" ]] && mkdir "/Applications/Games"
-mv "$APPBUNDLE" /Applications/Games && echo $escGreen"\v[*]Done! $gameName app created successfully \a"$escReset
-# cleanup
-rm -R "$tempDIR"
+{mv "$APPBUNDLE" /Applications/Games && echo $escGreen"\v[*]Done! $gameName app created successfully \a"$escReset}|| { echo $escRed"Moving Failed. Check Debug"$escReset && cleanup && exit 1 }
+
+
+cleanup;
 
