@@ -58,14 +58,15 @@ isDirExist(){
     [[ ! -d "$1" ]] && mkdir "$1"
 }
 extractIcon(){
+[[ -f $(which resource_dasmm) ]] && DASM=true;
 # $1="$GAMEPATH" $2=$tempDIR $3="${gameName}
 isDirExist "${2}-output"
-    { [[ -f $(which resource_dasm) ]] && resource_dasm --target-type=icns "$1" "${2}"-output 2>/dev/null 1>&2 } || \
+    { [[ $DASM == "true" ]] && resource_dasm --target-type=icns "$1" "${2}"-output 2>/dev/null 1>&2; } || \
     {
         icns="$(xattr -px com.apple.ResourceFork "$1")" # grab the resource fork from the input file in hex format
         icns=${icns#*69 63 6E 73}   # using variable expansion delete the first 260 bytes including the magic number for icns.
         icns=$(echo "69 63 6E 73$icns") # add the magic number back
-        echo "$icns" | xxd -p -r > "${2}-output/icon.icns"
+        echo "$icns" | xxd -p -r > "${2}-output/GameIcon.icns"
     }
 }
 cleanup(){
@@ -75,7 +76,8 @@ cleanup(){
 }
 convertIcon(){
     # if icon is in other formats then convert it to png first then use it
-    sips -s format icns "$1" --out "$2"
+    isDirExist "${2}"
+    [[ $DASM != "true" ]] && sips -s format icns "$1" --out "${2}/GameIcon.icns"
     APPICON="${2}/GameIcon.icns"
 }
 findIcon(){
@@ -99,27 +101,21 @@ if [[ "${2}" == "f" ]]; then
         APPICON=$(findIcon ${gameName};)
 fi
 # getting the icon from original shortcut (method 2)
-if [[ -z "$APPICON" ]] && [[ "$APPICON" != "-" ]];
-    then
+if [[ -z "$APPICON" ]]; then
         echo "\vif you have a game icon put the location here (.icns file): "
         echo "if left empty then the icon from the shortcut will be used. \v"
         read APPICON
-        if [[ -z "$APPICON" ]]; then      
-                extractIcon "$GAMEPATH" $tempDIR/"${gameName}";
-                convertIcon "$tempDIR/"${gameName}"-output"/icon.icns "$tempDIR/"${gameName}"-output"/icon.icns;
-                cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns || cleanup
-            else
-                convertIcon "$APPICON" "$tempDIR";
-                cp "$APPICON" "$RESOURCESDIR"/GameIcon.icns || cleanup
-        fi
-        elif  [[ "$APPICON" == "-" ]];
-            then              
-                extractIcon "$GAMEPATH" $tempDIR/"${gameName}";
-                convertIcon "$tempDIR/"${gameName}"-output"/icon.icns "$tempDIR/"${gameName}"-output"/icon.icns;
-                cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns || cleanup
+        extractIcon "$GAMEPATH" $tempDIR/"${gameName}";
+        convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output";
+        cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns || cleanup
+elif [[ "$APPICON" == "-" ]]; then
+        extractIcon "$GAMEPATH" $tempDIR/"${gameName}";
+        convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output";
+        cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns || cleanup
     else
-        convertIcon "$APPICON" $tempDIR;
-        cp "$APPICON" "$RESOURCESDIR"/GameIcon.icns || cleanup
+        echo "in else"
+        convertIcon "$APPICON" "$tempDIR/"${gameName}"-output";
+        cp "$tempDIR/"${gameName}"-output"/GameIcon.icns "$RESOURCESDIR"/GameIcon.icns || cleanup
 fi
 
 [ $VERBOSE ] && echo $escGreen"Creating Plist"$escReset
