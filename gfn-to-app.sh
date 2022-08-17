@@ -66,6 +66,9 @@ if [[ "${1##*.}" != "icns" ]]; then
     APPICON="${2}/GameIcon.icns"
 fi
 }
+findIcon(){
+    find "${HOME}/Pictures/Icons/Games" -iname "${1}*" | head -1
+}
 #############
 # getting the icon from original shortcut (method 1) found here: https://stackoverflow.com/q/73354927/11709309
 # icns="$(xattr -px com.apple.ResourceFork "$GAMEPATH")" # grab the resource fork from the input file in hex format
@@ -75,9 +78,14 @@ fi
 # cleanup trigger
 trap cleanup 1 2 3 6
 # Game existance check
+[ $VERBOSE ] && echo ${escGreen}Game is$escReset $escCyan"$gameName"$escReset
 [[ -d "/Applications/Games/"${APPBUNDLE##*/}"" ]] && {echo $escRed""${APPBUNDLE##*/}" already exists \a"$escReset && cleanup }
 #
 [ $VERBOSE ] && echo $escGreen"Extracting Game Icon"$escReset
+# look for icon with game name
+if [[ "${2}" == "f" ]]; then
+        APPICON=$(findIcon ${gameName};)
+fi
 # getting the icon from original shortcut (method 2)
 if [[ -z "$APPICON" ]] && [[ "$APPICON" != "-" ]];
     then
@@ -86,18 +94,18 @@ if [[ -z "$APPICON" ]] && [[ "$APPICON" != "-" ]];
         read APPICON
         if [[ -z "$APPICON" ]]; then      
                 resource_dasm --target-type=icns "$GAMEPATH" $tempDIR/"${gameName}"-output 2>/dev/null 1>&2
-                cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns
+                cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns || cleanup
             else
                 convertIcon "$APPICON" "$tempDIR";
-                cp "$APPICON" "$RESOURCESDIR"/GameIcon.icns
+                cp "$APPICON" "$RESOURCESDIR"/GameIcon.icns || cleanup
         fi
         elif  [[ "$APPICON" == "-" ]];
             then
                 resource_dasm --target-type=icns "$GAMEPATH" $tempDIR/"${gameName}"-output 2>/dev/null 1>&2
-                cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns      
+                cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns || cleanup
     else
         convertIcon "$APPICON" $tempDIR;
-        cp "$APPICON" "$RESOURCESDIR"/GameIcon.icns
+        cp "$APPICON" "$RESOURCESDIR"/GameIcon.icns || cleanup
 fi
 
 [ $VERBOSE ] && echo $escGreen"Creating Plist"$escReset
