@@ -59,6 +59,13 @@ cleanup(){
   rm -R "$tempDIR" || echo "Unable to Remove Temp Directory"
   exit 1
 }
+convertIcon(){
+    # if icon is in other formats then convert it to png first then use it
+if [[ "${1##*.}" != "icns" ]]; then
+    sips -s format icns "$APPICON" --out $tempDIR/GameIcon.icns
+    APPICON="${2}/GameIcon.icns"
+fi
+}
 #############
 # getting the icon from original shortcut (method 1) found here: https://stackoverflow.com/q/73354927/11709309
 # icns="$(xattr -px com.apple.ResourceFork "$GAMEPATH")" # grab the resource fork from the input file in hex format
@@ -77,10 +84,11 @@ if [[ -z "$APPICON" ]] && [[ "$APPICON" != "-" ]];
         echo "\vif you have a game icon put the location here (.icns file): "
         echo "if left empty then the icon from the shortcut will be used. \v"
         read APPICON
-        if [[ -z "$APPICON" ]] || [[ "$APPICON" == "-" ]]; then      
+        if [[ -z "$APPICON" ]]; then      
                 resource_dasm --target-type=icns "$GAMEPATH" $tempDIR/"${gameName}"-output 2>/dev/null 1>&2
                 cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns
             else
+                convertIcon "$APPICON" "$tempDIR";
                 cp "$APPICON" "$RESOURCESDIR"/GameIcon.icns
         fi
         elif  [[ "$APPICON" == "-" ]];
@@ -88,6 +96,7 @@ if [[ -z "$APPICON" ]] && [[ "$APPICON" != "-" ]];
                 resource_dasm --target-type=icns "$GAMEPATH" $tempDIR/"${gameName}"-output 2>/dev/null 1>&2
                 cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns      
     else
+        convertIcon "$APPICON" $tempDIR;
         cp "$APPICON" "$RESOURCESDIR"/GameIcon.icns
 fi
 
