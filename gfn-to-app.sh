@@ -59,10 +59,11 @@ isDirExist(){
 }
 extractIcon(){
 [[ -f $(which resource_dasmm) ]] && DASM=true;
-# $1="$GAMEPATH" $2=$tempDIR $3="${gameName}
+# $1="$GAMEPATH" $2=$tempDIR
 isDirExist "${2}-output"
     { [[ $DASM == "true" ]] && resource_dasm --target-type=icns "$1" "${2}"-output 2>/dev/null 1>&2; } || \
     {
+        # getting the icon from original shortcut (method 1) found here: https://stackoverflow.com/q/73354927/11709309
         icns="$(xattr -px com.apple.ResourceFork "$1")" # grab the resource fork from the input file in hex format
         icns=${icns#*69 63 6E 73}   # using variable expansion delete the first 260 bytes including the magic number for icns.
         icns=$(echo "69 63 6E 73$icns") # add the magic number back
@@ -84,13 +85,9 @@ findIcon(){
     find "${HOME}/Pictures/Icons/Games" -iname "${1}*" | head -1
 }
 #############
-# getting the icon from original shortcut (method 1) found here: https://stackoverflow.com/q/73354927/11709309
-# icns="$(xattr -px com.apple.ResourceFork "$GAMEPATH")" # grab the resource fork from the input file in hex format
-# icns=${icns#*69 63 6E 73}   # using variable expansion delete the first 260 bytes including the magic number for icns.
-# icns=$(echo "69 63 6E 73$icns") # add the magic number back
-#
 # cleanup trigger
 trap cleanup 1 2 3 6
+#
 # Game existance check
 [ $VERBOSE ] && echo ${escGreen}Game is$escReset $escCyan"$gameName"$escReset
 [[ -d "/Applications/Games/"${APPBUNDLE##*/}"" ]] && {echo $escRed""${APPBUNDLE##*/}" already exists \a"$escReset && cleanup }
