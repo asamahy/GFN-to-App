@@ -42,6 +42,7 @@ mkdir "${CONTENTSDIR}"/MacOS
 MACOSDIR=""${CONTENTSDIR}"/MacOS"
 mkdir "${CONTENTSDIR}"/Resources
 RESOURCESDIR=""${CONTENTSDIR}"/Resources"
+ICONFORMAT='png'
 #####################
 # Color codes
 esc="$( echo -ne "\033" )"
@@ -71,14 +72,14 @@ isDirExist "${2}-output"
     }
 }
 cleanup(){
-  echo -e $escRed"\nRemoving Temp Files....\n"$escReset
+  [ $VERBOSE ] && echo -e $escRed"Removing Temp Files...."$escReset
   rm -R "$tempDIR" || echo "Unable to Remove Temp Directory"
   exit 1
 }
 convertIcon(){
     # if icon is in other formats then convert it to png first then use it
     isDirExist "${2}"
-    [[ $DASM != "true" ]] && sips -s format png "$1" --out "${2}/GameIcon.icns"
+    [[ $DASM != "true" ]] && sips -s format $3 "$1" --out "${2}/GameIcon.icns" 1>/dev/null 2>&1
     APPICON="${2}/GameIcon.icns"
 }
 findIcon(){
@@ -96,6 +97,7 @@ trap cleanup 1 2 3 6
 # look for icon with game name
 if [[ "${2}" == "f" ]]; then
         APPICON=$(findIcon ${gameName};)
+        ICONFORMAT='icns'
 fi
 # getting the icon from original shortcut (method 2)
 if [[ -z "$APPICON" ]]; then
@@ -103,15 +105,15 @@ if [[ -z "$APPICON" ]]; then
         echo "if left empty then the icon from the shortcut will be used. \v"
         read APPICON
         extractIcon "$GAMEPATH" $tempDIR/"${gameName}";
-        convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output";
+        convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output" $ICONFORMAT;
         cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns || cleanup
 elif [[ "$APPICON" == "-" ]]; then
         extractIcon "$GAMEPATH" $tempDIR/"${gameName}";
-        convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output";
+        convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output" $ICONFORMAT;
         cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns || cleanup
     else
         echo "in else"
-        convertIcon "$APPICON" "$tempDIR/"${gameName}"-output";
+        convertIcon "$APPICON" "$tempDIR/"${gameName}"-output" $ICONFORMAT;
         cp "$tempDIR/"${gameName}"-output"/GameIcon.icns "$RESOURCESDIR"/GameIcon.icns || cleanup
 fi
 
@@ -142,7 +144,7 @@ chmod u+x "$CONTENTSDIR"/MacOS/GFN 2>/dev/null || { echo $escRed"Setting Permiss
 [ $VERBOSE ] && echo $escGreen"Moving Application"$escReset
 # move Game to Applications/Games
 isDirExist "/Applications/Games"
-{mv "$APPBUNDLE" /Applications/Games && echo $escGreen"\v[*]Done! $gameName app created successfully \a"$escReset}|| { echo $escRed"Moving Failed. Check Debug"$escReset && cleanup && exit 1 }
+{mv "$APPBUNDLE" /Applications/Games && echo $escGreen"[*]Done! $gameName app created successfully \a"$escReset}|| { echo $escRed"\vMoving Failed. Check Debug"$escReset && cleanup && exit 1 }
 
 
 cleanup;
