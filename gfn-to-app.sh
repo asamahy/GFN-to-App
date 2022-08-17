@@ -54,6 +54,9 @@ escYellow="${esc}[33m"
 escPurple="${esc}[35m"
 escCyan="${esc}[36m"
 #################
+isDirExist(){
+    [[ ! -d "$1" ]] && mkdir "$1"
+}
 cleanup(){
   echo -e $escRed"\nRemoving Temp Files....\n"$escReset
   rm -R "$tempDIR" || echo "Unable to Remove Temp Directory"
@@ -134,7 +137,7 @@ chmod u+x "$CONTENTSDIR"/MacOS/GFN 2>/dev/null || { echo $escRed"Setting Permiss
 
 [ $VERBOSE ] && echo $escGreen"Moving Application"$escReset
 # move Game to Applications/Games
-[[ ! -d "/Applications/Games" ]] && mkdir "/Applications/Games"
+isDirExist "/Applications/Games"
 {mv "$APPBUNDLE" /Applications/Games && echo $escGreen"\v[*]Done! $gameName app created successfully \a"$escReset}|| { echo $escRed"Moving Failed. Check Debug"$escReset && cleanup && exit 1 }
 
 
