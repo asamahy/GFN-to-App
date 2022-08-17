@@ -5,7 +5,7 @@
 VERBOSE=$3
 DEBUG=$4
 [[ "$DEBUG" == "d" ]] && set -x;
-[[ "$VERBOSE" == "-" ]] && VERBOSE=YES
+{ [[ "$VERBOSE" == "-" ]] && VERBOSE=YES } || VERBOSE='';
 ############################
 if [[ -n "${1}" ]] && [[ "$1" != "-" ]] ;
     then
