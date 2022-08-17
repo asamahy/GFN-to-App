@@ -34,3 +34,12 @@ shortcut automatically; However, using `-` in place of the game shortcut path wi
   ./gfn-to-app "/Users/asamahy/Desktop/FrostPunk on GeForce NOW.gfnpc" "icon.icns"
   ./gfn-to-app - "icon.icns"
 ~~~  
+
+## For Debugging
+you can set a third `-` to see simple steps and a forth argument of `d' will debug the whole script.
+
+# To Do
+* [ ] Use getopt instead.
+* [ ] Search for icons in a directory
+* [ ] Find another method of getting the image from the resource fork instead of relying on `resource_dasm`
+* [ ] add other todos to the To Do list.
