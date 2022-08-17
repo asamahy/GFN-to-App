@@ -77,7 +77,7 @@ cleanup(){
 convertIcon(){
     # if icon is in other formats then convert it to png first then use it
     isDirExist "${2}"
-    [[ $DASM != "true" ]] && sips -s format icns "$1" --out "${2}/GameIcon.icns"
+    [[ $DASM != "true" ]] && sips -s format png "$1" --out "${2}/GameIcon.icns"
     APPICON="${2}/GameIcon.icns"
 }
 findIcon(){
