@@ -97,8 +97,7 @@ trap cleanup 1 2 3 6
 # look for icon with game name
 if [[ "${2}" == "f" ]]; then
         APPICON=$(findIcon ${gameName};)
-        [[ $APPICON != "f" ]] && echo $escCyan"Icon found"$escReset
-        ICONFORMAT='icns'
+        { { [[ ${APPICON##*.} == "png" ]] || [[ ${APPICON##*.} == "icns" ]] } && echo $escCyan"Icon found"$escReset && ICONFORMAT='icns' } || { APPICON="-" && ICONFORMAT='png' }
 fi
 # getting the icon from original shortcut (method 2)
 if [[ -z "$APPICON" ]]; then
