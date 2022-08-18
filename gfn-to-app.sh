@@ -77,9 +77,15 @@ cleanup(){
   exit 1
 }
 convertIcon(){
+    hasAlpha="$(sips -g hasAlpha "$1" | awk -F "hasAlpha: " '{getline; print $2}')"
+   if [[ "${hasAlpha}" == "yes" ]]; then
+    ICONFORMAT="icns"
+    else
+    ICONFORMAT="png"
+   fi
     # if icon is in other formats then convert it to png first then use it
     isDirExist "${2}"
-    [[ $DASM != "true" ]] && sips -s format $3 "$1" --out "${2}/GameIcon.icns" 1>/dev/null 2>&1
+    [[ $DASM != "true" ]] && sips -s format $ICONFORMAT -s formatOptions best "$1" --out "${2}/GameIcon.icns" 1>/dev/null 2>&1
     APPICON="${2}/GameIcon.icns"
 }
 findIcon(){
@@ -97,7 +103,7 @@ trap cleanup 1 2 3 6
 # look for icon with game name
 if [[ "${2}" == "f" ]]; then
         APPICON=$(findIcon ${gameName};)
-        { { [[ ${APPICON##*.} == "png" ]] || [[ ${APPICON##*.} == "icns" ]] } && echo $escCyan"Icon found"$escReset && ICONFORMAT='icns' } || { APPICON="-" && ICONFORMAT='png' }
+        { { [[ ${APPICON##*.} == "png" ]] || [[ ${APPICON##*.} == "icns" ]] } && echo $escCyan"Icon found"$escReset} || APPICON="-"
 fi
 # getting the icon from original shortcut (method 2)
 if [[ -z "$APPICON" ]]; then
@@ -105,14 +111,14 @@ if [[ -z "$APPICON" ]]; then
         echo "if left empty then the icon from the shortcut will be used. \v"
         read APPICON
         extractIcon "$GAMEPATH" $tempDIR/"${gameName}";
-        convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output" $ICONFORMAT;
+        convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output";
         cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns 2>/dev/null || { echo $escRed"Error Copying Icon"$escReset && cleanup }
 elif [[ "$APPICON" == "-" ]]; then
         extractIcon "$GAMEPATH" $tempDIR/"${gameName}";
-        convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output" $ICONFORMAT;
+        convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output";
         cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns 2>/dev/null || { echo $escRed"Error Copying Icon"$escReset && cleanup }
     else
-        convertIcon "$APPICON" "$tempDIR/"${gameName}"-output" $ICONFORMAT;
+        convertIcon "$APPICON" "$tempDIR/"${gameName}"-output";
         cp "$tempDIR/"${gameName}"-output"/GameIcon.icns "$RESOURCESDIR"/GameIcon.icns 2>/dev/null || { echo $escRed"Error Copying Icon"$escReset && cleanup }
 fi
 
