@@ -107,15 +107,14 @@ if [[ -z "$APPICON" ]]; then
         read APPICON
         extractIcon "$GAMEPATH" $tempDIR/"${gameName}";
         convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output" $ICONFORMAT;
-        cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns || cleanup
+        cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns 2>/dev/null || { echo $escRed"Error Copying Icon"$escReset && cleanup }
 elif [[ "$APPICON" == "-" ]]; then
         extractIcon "$GAMEPATH" $tempDIR/"${gameName}";
         convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output" $ICONFORMAT;
-        cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns || cleanup
+        cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns 2>/dev/null || { echo $escRed"Error Copying Icon"$escReset && cleanup }
     else
-        echo "in else"
         convertIcon "$APPICON" "$tempDIR/"${gameName}"-output" $ICONFORMAT;
-        cp "$tempDIR/"${gameName}"-output"/GameIcon.icns "$RESOURCESDIR"/GameIcon.icns || cleanup
+        cp "$tempDIR/"${gameName}"-output"/GameIcon.icns "$RESOURCESDIR"/GameIcon.icns 2>/dev/null || { echo $escRed"Error Copying Icon"$escReset && cleanup }
 fi
 
 [ $VERBOSE ] && echo $escGreen"Creating Plist"$escReset
