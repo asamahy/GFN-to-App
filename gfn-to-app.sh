@@ -43,6 +43,7 @@ MACOSDIR=""${CONTENTSDIR}"/MacOS"
 mkdir "${CONTENTSDIR}"/Resources
 RESOURCESDIR=""${CONTENTSDIR}"/Resources"
 ICONFORMAT='png'
+GAMESDIR="/Applications/Games"
 #####################
 # Color codes
 esc="$( echo -ne "\033" )"
@@ -73,20 +74,20 @@ isDirExist "${2}-output"
 }
 cleanup(){
   [ $VERBOSE ] && echo -e $escRed"Removing Temp Files...."$escReset
-  rm -R "$tempDIR" || echo "Unable to Remove Temp Directory"
+#   rm -R "$tempDIR" || echo "Unable to Remove Temp Directory"
   exit 1
 }
 convertIcon(){
     hasAlpha="$(sips -g hasAlpha "$1" | awk -F "hasAlpha: " '{getline; print $2}')"
    if [[ "${hasAlpha}" == "yes" ]]; then
-    ICONFORMAT="icns"
+    ICONFORMAT="png"
     else
     ICONFORMAT="png"
    fi
     # if icon is in other formats then convert it to png first then use it
     isDirExist "${2}"
-    [[ $DASM != "true" ]] && sips -s format $ICONFORMAT -s formatOptions best "$1" --out "${2}/GameIcon.icns" 1>/dev/null 2>&1
-    APPICON="${2}/GameIcon.icns"
+    [[ $DASM != "true" ]] && sips -s format $ICONFORMAT -s formatOptions best -z 512 512 "$1" --out "${2}/GameIcon.icns" 1>/dev/null 2>&1 && APPICON="${2}/GameIcon.icns" || \
+    APPICON=${2}
 }
 findIcon(){
     find "${HOME}/Pictures/Icons/Games" -iname "${1}*" | head -1
@@ -97,29 +98,28 @@ trap cleanup 1 2 3 6
 #
 # Game existance check
 [ $VERBOSE ] && echo ${escGreen}Game is$escReset $escCyan"$gameName"$escReset
-[[ -d "/Applications/Games/"${APPBUNDLE##*/}"" ]] && {echo $escRed""${APPBUNDLE##*/}" already exists \a"$escReset && cleanup }
+[[ -d "${GAMESDIR}/"${APPBUNDLE##*/}"" ]] && {echo $escRed""${APPBUNDLE##*/}" already exists \a"$escReset && cleanup }
 #
 [ $VERBOSE ] && echo $escGreen"Extracting Game Icon"$escReset
 # look for icon with game name
 if [[ "${2}" == "f" ]]; then
         APPICON=$(findIcon ${gameName};)
-        { { [[ ${APPICON##*.} == "png" ]] || [[ ${APPICON##*.} == "icns" ]] } && echo $escCyan"Icon found"$escReset} || APPICON="-"
+        { { [[ ${APPICON##*.} == "png" ]] || [[ ${APPICON##*.} == "icns" ]] } && echo $escCyan"Icon Found"$escReset } || { echo $escRed"No Icon Found"$escReset && APPICON="" }
+        read ok
 fi
 # getting the icon from original shortcut (method 2)
 if [[ -z "$APPICON" ]]; then
         echo "\vif you have a game icon put the location here (.icns file): "
         echo "if left empty then the icon from the shortcut will be used. \v"
         read APPICON
-        extractIcon "$GAMEPATH" $tempDIR/"${gameName}";
-        convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output";
-        cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns 2>/dev/null || { echo $escRed"Error Copying Icon"$escReset && cleanup }
+        {[[ -z $APPICON ]] && extractIcon "$GAMEPATH" $tempDIR/"${gameName}" && convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output"} || convertIcon "$APPICON" "$tempDIR/"${gameName}"-output";
+        cp "${APPICON%*/}"/*.icns "$RESOURCESDIR"/GameIcon.icns || { echo $escRed"Error Copying Icon"$escReset && cleanup }
 elif [[ "$APPICON" == "-" ]]; then
-        extractIcon "$GAMEPATH" $tempDIR/"${gameName}";
-        convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output";
-        cp "$tempDIR/"${gameName}"-output"/*.icns "$RESOURCESDIR"/GameIcon.icns 2>/dev/null || { echo $escRed"Error Copying Icon"$escReset && cleanup }
+        extractIcon "$GAMEPATH" $tempDIR/"${gameName}" && convertIcon "$tempDIR/"${gameName}"-output"/*.icns "$tempDIR/"${gameName}"-output"
+        cp "${APPICON}" "$RESOURCESDIR"/GameIcon.icns || { echo $escRed"Error Copying Icon"$escReset && cleanup }
     else
         convertIcon "$APPICON" "$tempDIR/"${gameName}"-output";
-        cp "$tempDIR/"${gameName}"-output"/GameIcon.icns "$RESOURCESDIR"/GameIcon.icns 2>/dev/null || { echo $escRed"Error Copying Icon"$escReset && cleanup }
+        cp "$APPICON" "$RESOURCESDIR"/GameIcon.icns || { echo $escRed"Error Copying Icon"$escReset && cleanup }
 fi
 
 [ $VERBOSE ] && echo $escGreen"Creating Plist"$escReset
@@ -148,8 +148,8 @@ chmod u+x "$CONTENTSDIR"/MacOS/GFN 2>/dev/null || { echo $escRed"Setting Permiss
 
 [ $VERBOSE ] && echo $escGreen"Moving Application"$escReset
 # move Game to Applications/Games
-isDirExist "/Applications/Games"
-{mv "$APPBUNDLE" /Applications/Games && echo $escGreen"[*]Done! $gameName app created successfully \a"$escReset}|| { echo $escRed"\vMoving Failed. Check Debug"$escReset && cleanup && exit 1 }
+isDirExist "${GAMESDIR}"
+{mv "$APPBUNDLE" ${GAMESDIR} && echo $escGreen"[*]Done! $gameName app created successfully \a"$escReset}|| { echo $escRed"\vMoving Failed. App might already exist. Check Debug"$escReset && cleanup && exit 1 }
 
 
 cleanup;
